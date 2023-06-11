@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import yaml
+import click
+import psutil
+import fasteners
+import subprocess
+import xml.etree.ElementTree as ET
+
+from multiprocessing import Pool
+from urllib.parse import urlparse
+from urllib.request import urlopen
+
+
+@click.group("cli")
+def cli():
+    """Manage system operations using the system utility on blendOS."""
+
+
+def main():
+    cli(prog_name="system")
+
+
+@cli.command("install-host")
+@click.argument('pkgs', nargs=-1, required=True)
+def install_host(pkgs):
+    '''
+    Install custom system packages.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root', file=sys.stderr)
+        exit(1)
+
+    pkgs = list(pkgs)
+
+    orig_pkgs = []
+
+    subprocess.run(['touch', '/.custom_pkg_list'])
+    with open('/.custom_pkg_list') as custompkglist_file:
+        while line := custompkglist_file.readline():
+            if line.strip() != '':
+                orig_pkgs.append(line.strip())
+
+    subprocess.run(['akshara', 'set-custom-packages', *orig_pkgs, *pkgs])
+
+
+@cli.command("remove-host")
+@click.argument('pkgs', nargs=-1, required=True)
+def install_host(pkgs):
+    '''
+    Install custom system packages.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root', file=sys.stderr)
+        exit(1)
+
+    orig_pkgs = []
+
+    pkgs = list(pkgs)
+
+    subprocess.run(['touch', '/.custom_pkg_list'])
+    with open('/.custom_pkg_list') as custompkglist_file:
+        while line := custompkglist_file.readline():
+            if line.strip() != '':
+                if line.strip() not in orig_pkgs:
+                    orig_pkgs.append(line.strip())
+    
+    for pkg in pkgs:
+        if pkg not in orig_pkgs:
+            print(f'w: {pkg} not installed, so not removing.')
+            print()
+        else:
+            orig_pkgs.remove(pkg)
+
+    if len(orig_pkgs) == 0:
+        subprocess.run(['akshara', 'drop-overlay'])
+    else:
+        print(orig_pkgs)
+        subprocess.run(['akshara', 'set-custom-packages', *orig_pkgs])
+
+
+@cli.command("switch-track")
+def switch_track():
+    '''
+    Switch to a different OS track.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root', file=sys.stderr)
+        exit(1)
+
+    system_lock = fasteners.InterProcessLock('/var/lib/.akshara-system-lock')
+    print('i: attempting to acquire system lock')
+
+    with system_lock:
+        print()
+        if os.path.isfile('/mnt/iso-update/.ready-for-update'):
+            print('e: you must reboot first. (an update was downloaded in the background)')
+
+        image_server = 'https://images.blendos.co'
+
+        if os.path.isfile('/etc/blend_release'):
+            with open('/etc/blend_release') as f:
+                blend_release = yaml.safe_load(f)
+                image_server = blend_release['server']
+                curr_track = blend_release['track']
+
+        tracks = json.loads(urlopen(image_server + '/track/list').read().decode())['tracks']
+
+        selected_track_name = ''
+
+        print('Available build profiles:')
+        print()
+        for i, p in enumerate(tracks):
+            print(f'{i}. {p}')
+        print()
+        while True:
+            selection = input(f'Select a profile [example: 0 or {tracks[0]} for {tracks[0]}]: ').strip()
+            if selection == '':
+                if tracks[0] == curr_track:
+                    print(f'The selected track is already in use. ({curr_track})')
+                    print()
+                    continue
+                selected_track_name = tracks[0]
+                print()
+                break
+            elif selection.isdigit():
+                if int(selection) < len(tracks):
+                    if tracks[int(selection)] == curr_track:
+                        print(f'The selected track is already in use. ({curr_track})')
+                        print()
+                        continue
+                    else:
+                        selected_track_name = tracks[int(selection)]
+                        print()
+                    break
+                else:
+                    print('No such track exists.')
+                    print()
+            else:
+                if selection in tracks:
+                    if selection == curr_track:
+                        print(f'The selected track is already in use. ({curr_track})')
+                        print()
+                        continue
+                    selected_track_name = selection
+                    print()
+                    break
+                else:
+                    print('No such track exists.')
+                    print()
+
+        print(f'Switching to {selected_track_name}.')
+
+        with open('/etc/blend_release', 'w') as f:
+            release = {
+                'server': image_server,
+                'track': selected_track_name,
+                'current': 0,
+            }
+            yaml.dump(release, f)
+
+        print()
+        print('The track switch will commence within a minute, and the logs will be visible here. Do not turn off your computer.')
+        print()
+
+        subprocess.run(['journalctl', '-S', '-0', '-u', 'akshara', '-f'], stdout=sys.stdout, stderr=sys.stderr)
+
+
+if __name__ == '__main__':
+    main()
