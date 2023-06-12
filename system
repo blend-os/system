@@ -76,7 +76,6 @@ def install_host(pkgs):
     if len(orig_pkgs) == 0:
         subprocess.run(['akshara', 'drop-overlay'])
     else:
-        print(orig_pkgs)
         subprocess.run(['akshara', 'set-custom-packages', *orig_pkgs])
 
 
