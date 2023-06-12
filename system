@@ -5,13 +5,9 @@ import sys
 import json
 import yaml
 import click
-import psutil
 import fasteners
 import subprocess
-import xml.etree.ElementTree as ET
 
-from multiprocessing import Pool
-from urllib.parse import urlparse
 from urllib.request import urlopen
 
 
