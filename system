@@ -79,7 +79,7 @@ def install_host(pkgs):
         subprocess.run(['akshara', 'set-custom-packages', *orig_pkgs])
 
 
-@cli.command("switch-track")
+@cli.command("track")
 def switch_track():
     '''
     Switch to a different OS track.
