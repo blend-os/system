@@ -164,7 +164,7 @@ def switch_track():
         print('The track switch will commence within a minute, and the logs will be visible here. Do not turn off your computer.')
         print()
 
-        subprocess.run(['bash', 'journalctl -S -0 -u akshara -f & while true; do test -f /mnt/iso-update/.ready-for-update && exit; done'], stdout=sys.stdout, stderr=sys.stderr)
+        subprocess.run(['bash', '-c', 'journalctl -S -0 -u akshara -f & while true; do test -f /mnt/iso-update/.ready-for-update && exit; done'], stdout=sys.stdout, stderr=sys.stderr)
 
         print()
         print('Track switch complete. You may now reboot.')
