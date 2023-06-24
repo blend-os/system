@@ -1,0 +1,54 @@
+modules:
+    ssh:
+        enabled: true
+        allowed_keys: ['ssh-rsa AAAA user@host', 'ssh-rsa BBBB user@host']
+
+    gnome:
+        enabled: true
+        style: light
+        gtk-theme: 'adw-gtk3'
+        icon-theme: 'Adwaita'
+        titlebar:
+            button-placement: 'right'
+
+            # the next three options support the following values: toggle-maximize | toggle-maximize-horizontally
+            #                                                        | toggle-maximize-vertically | minimize | none | lower | menu
+            double-click-action: 'toggle-maximize'
+            middle-click-action: 'minimize'
+            right-click-action: 'menu'
+
+
+containers:
+    # Containers go here
+    ubuntu: 
+        distro: ubuntu-23.04
+        packages:
+            - brz
+            - devscripts
+        commands:
+            - 'echo "info: commands provided as strings, like this one, are run with bash"'
+    
+    debian:
+        distro: debian
+        packages:
+            - git
+            - cowsay
+            - live-build
+        commands:
+            - sudo ln -sf ../../games/cowsay /usr/bin/cowsay
+            - sudo ln -sf ../../games/cowthink /usr/bin/cowthink
+            - ['cowsay', 'commands provided in the form of a list, like this one, are executed directly inside containers']
+
+    kali: 
+        distro: kali-linux
+        packages:
+            - metasploit-framework
+
+associations:
+    # Associations go here
+    apt: ubuntu
+    hello: ubuntu
+    debuild: ubuntu
+    git: debian
+    lb: debian
+    msfconsole: kali

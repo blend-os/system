@@ -10,7 +10,6 @@ import subprocess
 
 from urllib.request import urlopen
 
-
 @click.group("cli")
 def cli():
     """Manage system operations using the system utility on blendOS."""
@@ -20,9 +19,9 @@ def main():
     cli(prog_name="system")
 
 
-@cli.command("install-host")
+@cli.command("install")
 @click.argument('pkgs', nargs=-1, required=True)
-def install_host(pkgs):
+def install(pkgs):
     '''
     Install custom system packages.
     '''
@@ -44,11 +43,11 @@ def install_host(pkgs):
     subprocess.run(['akshara', 'set-custom-packages', *orig_pkgs, *pkgs])
 
 
-@cli.command("remove-host")
+@cli.command("remove")
 @click.argument('pkgs', nargs=-1, required=True)
-def install_host(pkgs):
+def remove_host(pkgs):
     '''
-    Install custom system packages.
+    Remove custom system packages.
     '''
 
     if os.geteuid() != 0:
