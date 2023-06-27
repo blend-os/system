@@ -95,6 +95,7 @@ def switch_track():
         print()
         if os.path.isfile('/mnt/iso-update/.ready-for-update'):
             print('e: you must reboot first. (an update was downloaded in the background)')
+            exit(1)
 
         image_server = 'https://images.blendos.co'
 
@@ -163,10 +164,10 @@ def switch_track():
         print('The track switch will commence within a minute, and the logs will be visible here. Do not turn off your computer.')
         print()
 
-        subprocess.run(['bash', '-c', 'journalctl -S -0 -u akshara -f & while true; do test -f /mnt/iso-update/.ready-for-update && exit; done'], stdout=sys.stdout, stderr=sys.stderr)
+    subprocess.run(['bash', '-c', 'journalctl -S -0 -u akshara -f & while true; do test -f /mnt/iso-update/.ready-for-update && exit; done'], stdout=sys.stdout, stderr=sys.stderr)
 
-        print()
-        print('Track switch complete. You may now reboot.')
+    print()
+    print('Track switch complete. You may now reboot.')
 
 
 if __name__ == '__main__':
