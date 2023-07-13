@@ -77,6 +77,136 @@ def remove_host(pkgs):
     else:
         subprocess.run(['akshara', 'set-custom-packages', *orig_pkgs])
 
+@cli.command("hide")
+@click.argument('pkgs', nargs=-1, required=True)
+def hide_host(pkgs):
+    '''
+    Hiding custom system packages.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root', file=sys.stderr)
+        exit(1)
+
+    orig_pkgs = []
+    hidd_pkgs = []
+
+    pkgs = list(pkgs)
+
+    subprocess.run(['touch', '/.custom_pkg_list'])
+    with open('/.custom_pkg_list') as custompkglist_file:
+        while line := custompkglist_file.readline():
+            if line.strip() != '':
+                if line.strip() not in orig_pkgs:
+                    orig_pkgs.append(line.strip())
+    
+    subprocess.run(['touch', '/.custom_pkg_hidden'])
+    with open('/.custom_pkg_hidden') as custompkghidden_file:
+        while line := custompkghidden_file.readline():
+            if line.strip() != '':
+                if line.strip() not in orig_pkgs:
+                    hidd_pkgs.append(line.strip())
+    
+    for pkg in pkgs:
+        if pkg in orig_pkgs and pkg in hidd_pkgs:
+            orig_pkgs.remove(pkg)
+            print(f'w: {pkg} is installed and already hidden, will rehide.')
+            print()
+        elif pkg in orig_pkgs and pkg not in hidd_pkgs::
+            orig_pkgs.remove(pkg)
+            hidd_pkgs.append(pkg)
+            print(f'w: {pkg} was hidden.')
+            print()
+        else:
+            print(f'w: {pkg} not detected, so not hiding.')
+            print()
+
+    exec('rm', '-f', '/.custom_pkg_list')
+    exec('touch', '/.custom_pkg_list')
+    
+    exec('rm', '-f', '/.custom_pkg_hidden')
+    exec('touch', '/.custom_pkg_hidden')
+
+    info("you are requested to review the operation's output")
+    info("press ENTER to proceed with making overlay permanent, or ^C to abort")
+    info("(aborting will also remove any packages installed previously without rebooting)")
+    try:
+        input()
+        except EOFError:
+
+        exec('bash', '-c', "echo -n > /.custom_pkg_list")
+        for pkg in orig_pkgs:
+            exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_list")
+        
+        exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
+        for pkg in hidd_pkgs:
+            exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
+        
+        exit()
+
+@cli.command("unhide")
+@click.argument('pkgs', nargs=-1, required=True)
+def unhide_host(pkgs):
+    '''
+    Unhiding custom system packages.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root', file=sys.stderr)
+        exit(1)
+
+    orig_pkgs = []
+    hidd_pkgs = []
+
+    pkgs = list(pkgs)
+
+    subprocess.run(['touch', '/.custom_pkg_list'])
+    with open('/.custom_pkg_list') as custompkglist_file:
+        while line := custompkglist_file.readline():
+            if line.strip() != '':
+                if line.strip() not in orig_pkgs:
+                    orig_pkgs.append(line.strip())
+    
+    subprocess.run(['touch', '/.custom_pkg_hidden'])
+    with open('/.custom_pkg_hidden') as custompkghidden_file:
+        while line := custompkghidden_file.readline():
+            if line.strip() != '':
+                if line.strip() not in orig_pkgs:
+                    hidd_pkgs.append(line.strip())
+    
+    for pkg in pkgs:
+        if pkg in orig_pkgs and pkg in hidd_pkgs:
+            orig_pkgs.remove(pkg)
+            print(f'w: {pkg} is installed and already hidden, will unhide.')
+            print()
+        elif pkg not in orig_pkgs and pkg in hidd_pkgs::
+            orig_pkgs.append(pkg)
+            hidd_pkgs.remove(pkg)
+            print(f'w: {pkg} was unhidden.')
+            print()
+        else:
+            print(f'w: {pkg} not detected, so not unhiding.')
+            print()
+
+    exec('rm', '-f', '/.custom_pkg_list')
+    exec('touch', '/.custom_pkg_list')
+    
+    exec('rm', '-f', '/.custom_pkg_hidden')
+    exec('touch', '/.custom_pkg_hidden')
+
+    info("you are requested to review the operation's output")
+    info("press ENTER to proceed with making overlay permanent, or ^C to abort")
+    info("(aborting will also remove any packages installed previously without rebooting)")
+    try:
+        input()
+        except EOFError:
+
+        exec('bash', '-c', "echo -n > /.custom_pkg_list")
+        for pkg in pkgs:
+            exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_list")
+        
+        exit()
+
 
 @cli.command("track")
 def switch_track():
