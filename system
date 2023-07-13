@@ -205,6 +205,10 @@ def unhide_host(pkgs):
         for pkg in pkgs:
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_list")
         
+        exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
+        for pkg in hidd_pkgs:
+            exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
+        
         exit()
 
 
