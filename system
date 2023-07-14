@@ -10,14 +10,60 @@ import subprocess
 
 from urllib.request import urlopen
 
+# Colors
+
+
+class colors:
+    reset = '\033[0m'
+    bold = '\033[01m'
+    disable = '\033[02m'
+    underline = '\033[04m'
+    reverse = '\033[07m'
+    strikethrough = '\033[09m'
+    invisible = '\033[08m'
+
+    class fg:
+        black = '\033[30m'
+        red = '\033[31m'
+        green = '\033[32m'
+        orange = '\033[33m'
+        blue = '\033[34m'
+        purple = '\033[35m'
+        cyan = '\033[36m'
+        lightgrey = '\033[37m'
+        darkgrey = '\033[90m'
+        lightred = '\033[91m'
+        lightgreen = '\033[92m'
+        yellow = '\033[93m'
+        lightblue = '\033[94m'
+        pink = '\033[95m'
+        lightcyan = '\033[96m'
+
+    class bg:
+        black = '\033[40m'
+        red = '\033[41m'
+        green = '\033[42m'
+        orange = '\033[43m'
+        blue = '\033[44m'
+        purple = '\033[45m'
+        cyan = '\033[46m'
+        lightgrey = '\033[47m'
+
+# END
+
 @click.group("cli")
 def cli():
     """Manage system operations using the system utility on blendOS."""
 
-
 def main():
     cli(prog_name="system")
 
+def exec(*cmd, **kwargs):
+    return subprocess.call(cmd, shell=False, **kwargs)
+
+def info(msg):
+    print(colors.bold + colors.fg.cyan + '>> i: ' +
+          colors.reset + colors.bold + msg + colors.reset)
 
 @cli.command("install")
 @click.argument('pkgs', nargs=-1, required=True)
@@ -104,7 +150,7 @@ def hide_host(pkgs):
     with open('/.custom_pkg_hidden') as custompkghidden_file:
         while line := custompkghidden_file.readline():
             if line.strip() != '':
-                if line.strip() not in orig_pkgs:
+                if line.strip() not in hidd_pkgs:
                     hidd_pkgs.append(line.strip())
     
     for pkg in pkgs:
@@ -112,7 +158,7 @@ def hide_host(pkgs):
             orig_pkgs.remove(pkg)
             print(f'w: {pkg} is installed and already hidden, will rehide.')
             print()
-        elif pkg in orig_pkgs and pkg not in hidd_pkgs::
+        elif pkg in orig_pkgs and pkg not in hidd_pkgs:
             orig_pkgs.remove(pkg)
             hidd_pkgs.append(pkg)
             print(f'w: {pkg} was hidden.')
@@ -128,20 +174,19 @@ def hide_host(pkgs):
     exec('touch', '/.custom_pkg_hidden')
 
     info("you are requested to review the operation's output")
-    info("press ENTER to proceed with making overlay permanent, or ^C to abort")
-    info("(aborting will also remove any packages installed previously without rebooting)")
+    info("press ENTER to proceed with making this permanent, or ^C to abort")
+
     try:
         input()
-        except EOFError:
-
         exec('bash', '-c', "echo -n > /.custom_pkg_list")
         for pkg in orig_pkgs:
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_list")
-        
+
         exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
         for pkg in hidd_pkgs:
+
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
-        
+    except EOFError:
         exit()
 
 @cli.command("unhide")
@@ -171,7 +216,7 @@ def unhide_host(pkgs):
     with open('/.custom_pkg_hidden') as custompkghidden_file:
         while line := custompkghidden_file.readline():
             if line.strip() != '':
-                if line.strip() not in orig_pkgs:
+                if line.strip() not in hidd_pkgs:
                     hidd_pkgs.append(line.strip())
     
     for pkg in pkgs:
@@ -179,7 +224,7 @@ def unhide_host(pkgs):
             orig_pkgs.remove(pkg)
             print(f'w: {pkg} is installed and already hidden, will unhide.')
             print()
-        elif pkg not in orig_pkgs and pkg in hidd_pkgs::
+        elif pkg not in orig_pkgs and pkg in hidd_pkgs:
             orig_pkgs.append(pkg)
             hidd_pkgs.remove(pkg)
             print(f'w: {pkg} was unhidden.')
@@ -195,20 +240,17 @@ def unhide_host(pkgs):
     exec('touch', '/.custom_pkg_hidden')
 
     info("you are requested to review the operation's output")
-    info("press ENTER to proceed with making overlay permanent, or ^C to abort")
-    info("(aborting will also remove any packages installed previously without rebooting)")
+    info("press ENTER to proceed with making this permanent, or ^C to abort")
     try:
         input()
-        except EOFError:
-
-        exec('bash', '-c', "echo -n > /.custom_pkg_list")
+         exec('bash', '-c', "echo -n > /.custom_pkg_list")
         for pkg in pkgs:
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_list")
-        
+
         exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
         for pkg in hidd_pkgs:
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
-        
+    except EOFError:
         exit()
 
 
