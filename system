@@ -184,7 +184,6 @@ def hide_host(pkgs):
 
         exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
         for pkg in hidd_pkgs:
-
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
     except EOFError:
         exit()
