@@ -184,7 +184,7 @@ def hide_host(pkgs):
 
         exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
         for pkg in hidd_pkgs:
-            exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
+       	    exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
     except EOFError:
         exit()
 
@@ -242,7 +242,7 @@ def unhide_host(pkgs):
     info("press ENTER to proceed with making this permanent, or ^C to abort")
     try:
         input()
-         exec('bash', '-c', "echo -n > /.custom_pkg_list")
+        exec('bash', '-c', "echo -n > /.custom_pkg_list")
         for pkg in pkgs:
             exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_list")
 
