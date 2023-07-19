@@ -63,7 +63,7 @@ def exec(*cmd, **kwargs):
 
 def info(msg):
     print(colors.bold + colors.fg.cyan + '>> i: ' +
-          colors.reset + colors.bold + msg + colors.reset)
+            colors.reset + colors.bold + msg + colors.reset)
 
 @cli.command("install")
 @click.argument('pkgs', nargs=-1, required=True)
@@ -184,7 +184,7 @@ def hide_host(pkgs):
 
         exec('bash', '-c', "echo -n > /.custom_pkg_hidden")
         for pkg in hidd_pkgs:
-       	    exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
+            exec('bash', '-c', f"echo '{pkg}' >> /.custom_pkg_hidden")
     except EOFError:
         exit()
 
