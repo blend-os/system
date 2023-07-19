@@ -404,5 +404,42 @@ def exec_c(container, cmds):
     subprocess.run(['blend', 'enter', '-cn', container, '--', *cmds], env=creation_env)
 
 
+@cli.command("install")
+@click.argument('container')
+@click.argument('pkgs', nargs=-1, required=True)
+def install_c(container, pkgs):
+    '''
+    Install a package inside a container
+    '''
+    if os.path.isfile(os.path.expanduser(f'~/.local/bin/blend_bin/apt.{container}')):
+        subprocess.run([f'sudo.{container}', 'apt', 'update'])
+        subprocess.run([f'sudo.{container}', 'apt', 'install', *pkgs])
+    elif os.path.isfile(os.path.expanduser(f'~/.local/bin/blend_bin/dnf.{container}')):
+        subprocess.run([f'sudo.{container}', 'dnf', 'install', *pkgs])
+    elif os.path.isfile(os.path.expanduser(f'~/.local/bin/blend_bin/pacman.{container}')):
+        subprocess.run([f'sudo.{container}', 'pacman', '-Syu', *pkgs])
+    else:
+        error(f'container {colors.bold}{container}{colors.reset} does not exist')
+        exit(1)
+
+
+@cli.command("remove")
+@click.argument('container')
+@click.argument('pkgs', nargs=-1, required=True)
+def install_c(container, pkgs):
+    '''
+    Remove a package inside a container
+    '''
+    if os.path.isfile(os.path.expanduser(f'~/.local/bin/blend_bin/apt.{container}')):
+        subprocess.run([f'sudo.{container}', 'apt', 'purge', *pkgs])
+    elif os.path.isfile(os.path.expanduser(f'~/.local/bin/blend_bin/dnf.{container}')):
+        subprocess.run([f'sudo.{container}', 'dnf', 'remove', *pkgs])
+    elif os.path.isfile(os.path.expanduser(f'~/.local/bin/blend_bin/pacman.{container}')):
+        subprocess.run([f'sudo.{container}', 'pacman', '-Rcns', *pkgs])
+    else:
+        error(f'container {colors.bold}{container}{colors.reset} does not exist')
+        exit(1)
+
+
 if __name__ == '__main__':
     main()
