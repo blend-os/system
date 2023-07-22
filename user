@@ -426,7 +426,7 @@ def install_c(container, pkgs):
 @cli.command("remove")
 @click.argument('container')
 @click.argument('pkgs', nargs=-1, required=True)
-def install_c(container, pkgs):
+def remove_c(container, pkgs):
     '''
     Remove a package inside a container
     '''
