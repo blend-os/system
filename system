@@ -10,6 +10,7 @@ import subprocess
 
 from urllib.request import urlopen
 
+
 @click.group("cli")
 def cli():
     """Manage system operations using the system utility on blendOS."""
@@ -64,7 +65,7 @@ def remove_host(pkgs):
             if line.strip() != '':
                 if line.strip() not in orig_pkgs:
                     orig_pkgs.append(line.strip())
-    
+
     for pkg in pkgs:
         if pkg not in orig_pkgs:
             print(f'w: {pkg} not installed, so not removing.')
@@ -94,7 +95,8 @@ def switch_track():
     with system_lock:
         print()
         if os.path.isfile('/mnt/iso-update/.ready-for-update'):
-            print('e: you must reboot first. (an update was downloaded in the background)')
+            print(
+                'e: you must reboot first. (an update was downloaded in the background)')
             exit(1)
 
         image_server = 'https://images.blendos.co'
@@ -105,7 +107,8 @@ def switch_track():
                 image_server = blend_release['server']
                 curr_track = blend_release['track']
 
-        tracks = json.loads(urlopen(image_server + '/track/list').read().decode())['tracks']
+        tracks = json.loads(
+            urlopen(image_server + '/track/list').read().decode())['tracks']
 
         selected_track_name = ''
 
@@ -115,10 +118,12 @@ def switch_track():
             print(f'{i}. {p}')
         print()
         while True:
-            selection = input(f'Select a profile [example: 0 or {tracks[0]} for {tracks[0]}]: ').strip()
+            selection = input(
+                f'Select a profile [example: 0 or {tracks[0]} for {tracks[0]}]: ').strip()
             if selection == '':
                 if tracks[0] == curr_track:
-                    print(f'The selected track is already in use. ({curr_track})')
+                    print(
+                        f'The selected track is already in use. ({curr_track})')
                     print()
                     continue
                 selected_track_name = tracks[0]
@@ -127,7 +132,8 @@ def switch_track():
             elif selection.isdigit():
                 if int(selection) < len(tracks):
                     if tracks[int(selection)] == curr_track:
-                        print(f'The selected track is already in use. ({curr_track})')
+                        print(
+                            f'The selected track is already in use. ({curr_track})')
                         print()
                         continue
                     else:
@@ -140,7 +146,8 @@ def switch_track():
             else:
                 if selection in tracks:
                     if selection == curr_track:
-                        print(f'The selected track is already in use. ({curr_track})')
+                        print(
+                            f'The selected track is already in use. ({curr_track})')
                         print()
                         continue
                     selected_track_name = selection
@@ -164,11 +171,109 @@ def switch_track():
         print('The track switch will commence within a minute, and the logs will be visible here. Do not turn off your computer.')
         print()
 
-    subprocess.run(['bash', '-c', 'journalctl -S -0 -u akshara -f & while true; do test -f /mnt/iso-update/.ready-for-update && exit; done'], stdout=sys.stdout, stderr=sys.stderr)
+    subprocess.run(['bash', '-c', 'journalctl -S -0 -u akshara -f & while true; do test -f /mnt/iso-update/.ready-for-update && exit; done'],
+                   stdout=sys.stdout, stderr=sys.stderr)
 
     print()
     print('Track switch complete. You may now reboot.')
 
+
+@cli.command('build')
+@click.argument('profile_name', nargs=1, required=True)
+def build_iso(profile_name):
+    '''
+    Build an ISO of a standard blendOS variant like `gnome' or `plasma'.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root')
+        exit(1)
+
+    if os.path.isdir('/tmp/blend-build-out'):
+        subprocess.run(['rm', '-rf', '/tmp/blend-build-out'])
+
+    subprocess.run(
+        ['bash', '-c', '''echo 'pacman -Syu --noconfirm python-click python-yaml python-psutil grub squashfs-tools base-devel archiso sudo git; TEMP_ASSEMBLE_DIR="$(mktemp -d)"; git clone https://github.com/blend-os/assemble "${TEMP_ASSEMBLE_DIR}/assemble"; sudo cp "${TEMP_ASSEMBLE_DIR}/assemble/assemble" /usr/local/bin; rm -rf "${TEMP_ASSEMBLE_DIR}"; useradd -m blend; echo -e "\nblend ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers; mkdir blend-iso; chown blend blend-iso; sudo -u blend bash -c "cd blend-iso; assemble init https://github.com/blend-os/manifests main; assemble sync; source build/envsetup.sh; breakfast; sudo brunch ''' + profile_name + '''; cp -r out /tmp/blend-build-out"' | sudo podman run --rm -v /tmp:/tmp -i --privileged archlinux:latest'''])
+
+    iso_path = 'non-existent'
+
+    if os.path.isdir(f'/tmp/blend-build-out/{profile_name}'):
+        for _dir in os.listdir(f'/tmp/blend-build-out/{profile_name}'):
+            if os.path.isdir(f'/tmp/blend-build-out/{profile_name}/{_dir}'):
+                for file in os.listdir(f'/tmp/blend-build-out/{profile_name}/{_dir}'):
+                    if file.endswith('.iso'):
+                        iso_path = f'/tmp/blend-build-out/{profile_name}/{_dir}/{file}'
+                        break
+
+    if iso_path == 'non-existent':
+        print('e: the ISO build failed')
+        exit(1)
+    else:
+        subprocess.run(['cp', iso_path, 'blendOS.iso'])
+        print('The ISO has been built successfully, and is named `blendOS.iso\' in the current directory.')
+
+
+def build_custom(profile_name, profile_packages):
+    '''
+    Build an Apex ISO.
+    '''
+
+    if os.geteuid() != 0:
+        print('e: must be run as root')
+        exit(1)
+
+    if os.path.isdir('/tmp/blend-build-out'):
+        subprocess.run(['rm', '-rf', '/tmp/blend-build-out'])
+
+    subprocess.run(
+        ['bash', '-c', '''echo 'pacman -Syu --noconfirm python-click python-yaml python-psutil grub squashfs-tools base-devel archiso sudo git; TEMP_ASSEMBLE_DIR="$(mktemp -d)"; git clone https://github.com/blend-os/assemble "${TEMP_ASSEMBLE_DIR}/assemble"; sudo cp "${TEMP_ASSEMBLE_DIR}/assemble/assemble" /usr/local/bin; rm -rf "${TEMP_ASSEMBLE_DIR}"; useradd -m blend; echo -e "\nblend ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers; mkdir blend-iso; chown blend blend-iso; sudo -u blend bash -c "cd blend-iso; assemble init https://github.com/blend-os/manifests main; assemble sync; source build/envsetup.sh; breakfast; sudo custom-brunch ''' + profile_name + ' ' + ' '.join(profile_packages) + '''; cp -r out /tmp/blend-build-out"' | sudo podman run --rm -v /tmp:/tmp -i --privileged archlinux:latest'''])
+
+    iso_path = 'non-existent'
+
+    if os.path.isdir(f'/tmp/blend-build-out/{profile_name}'):
+        for _dir in os.listdir(f'/tmp/blend-build-out/{profile_name}'):
+            if os.path.isdir(f'/tmp/blend-build-out/{profile_name}/{_dir}'):
+                for file in os.listdir(f'/tmp/blend-build-out/{profile_name}/{_dir}'):
+                    if file.endswith('.iso'):
+                        iso_path = f'/tmp/blend-build-out/{profile_name}/{_dir}/{file}'
+                        break
+
+    if iso_path == 'non-existent':
+        print('e: the ISO build failed')
+        exit(1)
+    else:
+        subprocess.run(['cp', iso_path, 'blendOS.iso'])
+        print('The ISO has been built successfully, and is named `blendOS.iso\' in the current directory.')
+
+
+@cli.command('build-apex')
+@click.argument('profile_name', nargs=1, required=True)
+@click.argument('profile_packages', nargs=-1, required=True)
+def build_apex(profile_name, profile_packages):
+    build_custom(profile_name, profile_packages)
+
+
+@cli.command('apex-update')
+def update_apex():
+    if os.geteuid() != 0:
+        print('e: must be run as root', file=sys.stderr)
+        exit(1)
+
+    if input('would you like to edit the base package list? [y/n; default: n] ').lower() == 'y':
+        subprocess.run(['nano', '/.base_packages'])
+    with open('/etc/blend_release') as blend_release_file:
+        track = yaml.load(blend_release_file, Loader=yaml.FullLoader)['track']
+    pkgs = []
+    subprocess.run(['touch', '/.base_packages'])
+    with open('/.base_packages') as base_packages_file:
+        for pkg in base_packages_file:
+            if pkg.strip() != '':
+                pkgs.append(pkg)
+    print('i: starting new ISO build')
+    build_custom(track, pkgs)
+    print()
+    print('i: starting update')
+    subprocess.run(['akshara', 'apex-update', 'blendOS.iso'])
 
 if __name__ == '__main__':
     main()
