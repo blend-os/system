@@ -266,7 +266,7 @@ def apply_cadre(path):
                 for cmd in commands:
                     creation_env = os.environ.copy()
                     creation_env['BLEND_NO_CHECK'] = 'true'
-                    subprocess.run(['/home/zephyr/dev/blend/blend/blend', 'enter', '-cn', container, '--', *cmd], env=creation_env)
+                    subprocess.run(['blend', 'enter', '-cn', container, '--', *cmd], env=creation_env)
                 info(
                     f'finished running all commands for {colors.bold}{container}{colors.reset}')
                 print()
@@ -386,7 +386,7 @@ def shell(container):
         exit(1)
     creation_env = os.environ.copy()
     creation_env['BLEND_NO_CHECK'] = 'true'
-    subprocess.run(['/home/zephyr/dev/blend/blend-blend/blend', 'enter', '-cn', container], env=creation_env)
+    subprocess.run(['blend', 'enter', '-cn', container], env=creation_env)
 
 
 @cli.command("exec")
