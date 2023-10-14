@@ -12,7 +12,7 @@ def call(config):
 
     if type(config.get('icon-theme')) == str:
         return_val['commands'].append(
-            ['gsettings', 'set', 'org.gnome.desktop.interface', 'icon-theme', config.get('gtk-theme')])
+            ['gsettings', 'set', 'org.gnome.desktop.interface', 'icon-theme', config.get('icon-theme')])
 
     if type(config.get('style')) == str:
         return_val['commands'].append(
